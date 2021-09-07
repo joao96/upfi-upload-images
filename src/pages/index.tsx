@@ -8,6 +8,19 @@ import { api } from '../services/api';
 import { Loading } from '../components/Loading';
 import { Error } from '../components/Error';
 
+interface Card {
+  title: string;
+  description: string;
+  url: string;
+  ts: number;
+  id: string;
+}
+
+type PageResponse = {
+  data: Card[];
+  after: string | null;
+};
+
 export default function Home(): JSX.Element {
   const {
     data,
@@ -18,25 +31,33 @@ export default function Home(): JSX.Element {
     hasNextPage,
   } = useInfiniteQuery(
     'images',
-    async ({ pageParam = 0 }) => {
-      const result = await api.get(`/api/images`, {
+    async ({ pageParam = null }): Promise<PageResponse> => {
+      const response = await api.get('/api/images', {
         params: {
           after: pageParam,
         },
       });
-      return result;
+      return response.data;
     },
     {
       getNextPageParam: lastPage => {
-        return lastPage.data.after ?? null;
+        return lastPage.after ?? null;
       },
     }
   );
 
   const formattedData = useMemo(() => {
     if (data?.pages) {
-      const unformattedData = data.pages;
-      return unformattedData.map(page => page.data.data).flat();
+      const flattenedData: PageResponse[] = data.pages.flat();
+
+      const cards = flattenedData
+        .map(page => {
+          return page.data;
+        })
+        .flat();
+
+      // eslint-disable-next-line consistent-return
+      return cards;
     }
     return [];
   }, [data]);
@@ -58,10 +79,10 @@ export default function Home(): JSX.Element {
         {hasNextPage && (
           <Button
             mt="10"
-            isLoading={isFetchingNextPage}
-            loadingText="Carregando..."
             onClick={() => fetchNextPage()}
+            isLoading={isFetchingNextPage}
             colorSchema="orange"
+            loadingText="Carregando..."
           >
             Carregar mais
           </Button>
