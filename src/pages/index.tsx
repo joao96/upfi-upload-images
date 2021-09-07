@@ -18,10 +18,18 @@ export default function Home(): JSX.Element {
     hasNextPage,
   } = useInfiniteQuery(
     'images',
-    ({ pageParam = null }) => api.get(`/api/images?after=${0}`),
+    async ({ pageParam = 0 }) => {
+      const result = await api.get(`/api/images`, {
+        params: {
+          after: pageParam,
+        },
+      });
+      return result;
+    },
     {
-      getNextPageParam: (lastPage, pages) =>
-        lastPage.data?.after ? lastPage.data.after : null,
+      getNextPageParam: lastPage => {
+        return lastPage.data.after ?? null;
+      },
     }
   );
 
