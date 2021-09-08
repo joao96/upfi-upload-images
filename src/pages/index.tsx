@@ -56,7 +56,6 @@ export default function Home(): JSX.Element {
         })
         .flat();
 
-      // eslint-disable-next-line consistent-return
       return cards;
     }
     return [];
@@ -81,7 +80,6 @@ export default function Home(): JSX.Element {
             mt="10"
             onClick={() => fetchNextPage()}
             isLoading={isFetchingNextPage}
-            colorSchema="orange"
             loadingText="Carregando..."
           >
             Carregar mais

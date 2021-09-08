@@ -27,9 +27,12 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
       // TODO REQUIRED, LESS THAN 10 MB AND ACCEPTED FORMATS VALIDATIONS
       required: { value: true, message: 'Arquivo obrigatório' },
       validate: {
-        lessThan10MB: v => v[0].size < 10240000,
-        acceptedFormats: v =>
-          new RegExp(['jpeg', 'png', 'gif'].join('|')).test(v[0].type) ||
+        lessThan10MB: file =>
+          file[0].size / (1024 * 1024) < 10
+            ? true
+            : 'O arquivo deve ser menor que 10MB',
+        acceptedFormats: file =>
+          new RegExp(['jpeg', 'png', 'gif'].join('|')).test(file[0].type) ||
           'Somente são aceitos arquivos PNG, JPEG e GIF',
       },
     },
@@ -55,13 +58,13 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
 
   const queryClient = useQueryClient();
   const mutation = useMutation(
-    async ({ description, title, url }: AddImageFormData) => {
+    async (data: Record<string, unknown>) => {
       const response = await api.post('/api/images', {
-        description,
-        title,
-        url,
+        url: imageUrl,
+        title: data.title,
+        description: data.description,
       });
-      return response;
+      return response.data.image;
     },
     {
       onSuccess: () => {
@@ -90,11 +93,7 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
           isClosable: true,
         });
       } else {
-        await mutation.mutateAsync({
-          title: data.title,
-          description: data.description,
-          url: imageUrl,
-        });
+        await mutation.mutateAsync(data);
         toast({
           title: 'Imagem cadastrada',
           description: 'Sua imagem foi cadastrada com sucesso.',
@@ -113,6 +112,7 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
       });
     } finally {
       // TODO CLEAN FORM, STATES AND CLOSE MODAL
+      reset();
       setImageUrl('');
       setLocalImageUrl('');
       closeModal();
